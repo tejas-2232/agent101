@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Bot } from 'lucide-react';
+import { Bot, ArrowLeft, Sparkles, User, Mail, Lock } from 'lucide-react';
 
 export function Register() {
   const [email, setEmail] = useState('');
@@ -34,72 +34,105 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-md w-full mx-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20" />
+        <div className="floating-particles">
+          {[...Array(15)].map((_, i) => (
+            <div key={i} className="particle" style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 10}s`,
+              animationDuration: `${15 + Math.random() * 10}s`
+            }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Back to Home */}
+      <Link
+        to="/"
+        className="absolute top-6 left-6 flex items-center space-x-2 text-gray-400 hover:text-white transition z-20"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span>Back to Home</span>
+      </Link>
+
+      <div className="max-w-md w-full z-10">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-10">
           <div className="flex items-center justify-center mb-8">
-            <div className="bg-blue-600 p-3 rounded-xl">
-              <Bot className="w-8 h-8 text-white" />
+            <div className="bg-gradient-to-br from-purple-500 to-blue-500 p-3 rounded-xl animate-glow">
+              <Bot className="w-10 h-10 text-white" />
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">
-            Create Account
+          <h1 className="text-3xl md:text-4xl font-bold text-center mb-2">
+            Create Your Account
           </h1>
-          <p className="text-center text-gray-600 mb-8">
-            Start building your AI agents
+          <p className="text-center text-gray-400 mb-8">
+            Start building your AI agents today
           </p>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-slide-down">
+              <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-300 mb-2">
                 Full Name
               </label>
-              <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                placeholder="John Doe"
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-white placeholder-gray-500"
+                  placeholder="John Doe"
+                />
+              </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                 Email Address
               </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                placeholder="you@example.com"
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-white placeholder-gray-500"
+                  placeholder="you@example.com"
+                />
+              </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                placeholder="••••••••"
-              />
-              <p className="mt-1 text-sm text-gray-500">
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-white placeholder-gray-500"
+                  placeholder="••••••••"
+                />
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
                 Must be at least 6 characters
               </p>
             </div>
@@ -107,20 +140,36 @@ export function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3.5 rounded-xl font-semibold hover:opacity-90 focus:ring-4 focus:ring-purple-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 mt-6"
             >
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Creating account...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  <span>Get Started Free</span>
+                </>
+              )}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
+          <div className="mt-8 text-center">
+            <p className="text-gray-400">
               Already have an account?{' '}
-              <Link to="/login" className="text-blue-600 font-medium hover:text-blue-700">
+              <Link to="/login" className="text-purple-400 font-medium hover:text-purple-300 transition">
                 Sign in
               </Link>
             </p>
           </div>
+        </div>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-500">
+            By creating an account, you agree to our Terms of Service and Privacy Policy
+          </p>
         </div>
       </div>
     </div>
