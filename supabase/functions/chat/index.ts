@@ -63,7 +63,7 @@ Deno.serve(async (req: Request) => {
       {
         query_agent_id: agent_id,
         query_text: message,
-        match_count: 20,
+        match_count: 25,
       }
     );
 
