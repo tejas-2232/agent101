@@ -9,9 +9,12 @@ This is a complete Agent-as-a-Code platform where users can create AI agents tha
 ✅ User authentication (register, login, logout)
 ✅ Agent dashboard with agent management
 ✅ Agent creation wizard with URL scraping or file upload (PDF, TXT, Markdown)
-✅ Document processing with text extraction and chunking
+✅ **Advanced PDF text extraction** (similar to Amazon Textract)
+✅ **Intelligent context-aware chunking** (paragraph & sentence-based)
+✅ **Optional scanned PDF support** (with LlamaParse vision models)
+✅ Document processing with rich metadata extraction
 ✅ Vector similarity search for RAG
-✅ Real-time chat interface with streaming responses
+✅ Real-time chat interface with Llama 3.3 70B responses
 ✅ Knowledge base management
 ✅ Multi-tenant architecture with RLS security
 ✅ Supabase Edge Functions for backend processing
@@ -26,9 +29,19 @@ You need to provide the following API key:
 2. Get your API key from the dashboard
 3. You get 1 million free tokens daily!
 
-### Adding the API Key to Supabase
+### LlamaParse API Key (Optional)
 
-Since the Edge Functions are deployed and need the Cerebras API key, you'll need to add it as a secret in Supabase:
+For **scanned PDF support** (image-based PDFs):
+
+1. Sign up at [https://cloud.llamaindex.ai](https://cloud.llamaindex.ai)
+2. Get your API key from the dashboard
+3. FREE tier: 1000 pages/day
+
+**Note:** Only needed for scanned/image-based PDFs. Regular text PDFs work without this!
+
+### Adding the API Keys to Supabase
+
+Since the Edge Functions are deployed and need the API keys, you'll need to add them as secrets in Supabase:
 
 **Option 1: Via Supabase Dashboard**
 1. Go to your Supabase project dashboard
@@ -39,8 +52,20 @@ Since the Edge Functions are deployed and need the Cerebras API key, you'll need
 
 **Option 2: Via Supabase CLI (if you have it installed)**
 ```bash
-supabase secrets set CEREBRAS_API_KEY=your_api_key_here
+# Required
+supabase secrets set CEREBRAS_API_KEY=your_cerebras_key_here
+
+# Optional - for scanned PDF support
+supabase secrets set LLAMAPARSE_API_KEY=your_llamaparse_key_here
 ```
+
+**Option 3: Use the automated deployment script**
+```powershell
+# Windows
+.\deploy-pdf-extraction.ps1
+```
+
+This will guide you through setting up both keys and deploying the function!
 
 ## Database Setup
 
@@ -62,8 +87,37 @@ A storage bucket called `documents` has been created for file uploads with prope
 
 Two Edge Functions have been deployed:
 
-1. **chat** - Handles chat requests with RAG retrieval
-2. **process-document** - Processes uploaded documents and URLs
+1. **chat** - Handles chat requests with RAG retrieval using Llama 3.3 70B
+2. **process-document** - Processes uploaded documents and URLs with advanced features:
+   - 📄 **PDF text extraction** using pdf-parse library
+   - 🔍 **Intelligent chunking** (paragraph and sentence-aware)
+   - 📸 **Optional scanned PDF support** via LlamaParse vision models
+   - 📊 **Rich metadata extraction** (pages, file info, timestamps)
+   
+## PDF Extraction Capabilities
+
+Your platform now supports **production-grade PDF extraction** similar to Amazon Textract:
+
+### ✨ What It Does
+- Extracts all text from PDF documents (FAQs, manuals, guides)
+- Preserves document structure and context
+- Handles both text-based and scanned PDFs
+- Intelligently chunks content for optimal RAG performance
+- Tracks metadata (page count, file info, extraction method)
+
+### 📖 How to Use
+1. Create an agent (e.g., "FAQ Support Bot")
+2. Upload PDF files (single or multiple)
+3. Wait ~5 seconds for processing
+4. Chat with your agent about the PDF content!
+
+### 🎯 Perfect For
+- **Customer Support**: FAQ documents, help guides
+- **Technical Docs**: API documentation, manuals
+- **Training**: Company policies, procedures
+- **Sales**: Product catalogs, pricing sheets
+
+See `PDF_EXTRACTION_GUIDE.md` for detailed instructions and examples!
 
 ## How to Use the Platform
 
@@ -134,21 +188,26 @@ The platform implements Retrieval Augmented Generation:
 
 ## Current Limitations & Future Enhancements
 
+### ✅ Recently Added
+- ✅ **Advanced PDF text extraction** with pdf-parse library
+- ✅ **Intelligent chunking** preserving paragraphs and sentences
+- ✅ **Scanned PDF support** via LlamaParse (optional)
+- ✅ **Rich metadata extraction** (pages, file info, timestamps)
+
 ### Current Implementation
-- Text similarity search (trigram) for RAG
-- Basic PDF text extraction (needs full parser library)
+- Text similarity search (trigram) for RAG - works well for most use cases
 - Manual document processing trigger
+- Single LLM provider (Cerebras)
 
 ### Planned Enhancements
 - True vector embeddings using Cerebras or OpenAI
-- Advanced PDF parsing with image OCR
-- Vision model integration for image analysis
 - Automatic document processing via webhooks
 - Streaming responses in chat UI
 - Agent cloning and templates
 - Public agent sharing
 - API key generation for programmatic access
 - Usage analytics and metrics
+- Multi-modal support (images, audio)
 
 ## Development
 
@@ -171,7 +230,7 @@ npm run typecheck
 The following environment variables are already configured:
 
 ```
-VITE_SUPABASE_URL=https://fnsxysryvdqezsnmenap.supabase.co
+VITE_SUPABASE_URL=https://xxxxxxxxxxxxxxxxxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=[already configured]
 ```
 
