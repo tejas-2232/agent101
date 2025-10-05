@@ -15,6 +15,18 @@ See **[QUICK_START.md](QUICK_START.md)** - Get running in 5 minutes!
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
 - **[SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)** - Full platform documentation
 
+## 📊 How It Works
+
+```
+PDF/txt/md Upload → Extract Text → Chunk Content → Store in DB
+    ↓
+User Question → Search Chunks → Get Context → Llama Response
+```
+
+![AgentsForYou Architecture Flowchart](assets/flowchart.png)
+
+See [PDF_EXTRACTION_GUIDE.md](PDF_EXTRACTION_GUIDE.md) for technical details!
+
 ## ✨ Features
 
 - 🤖 Create custom AI agents
@@ -75,16 +87,6 @@ See [QUICK_START.md](QUICK_START.md) for detailed instructions!
 
 - **Cerebras** (required): https://cerebras.ai - FREE 1M tokens/day
 - **LlamaParse** (optional): https://cloud.llamaindex.ai - For scanned PDFs
-
-## 📊 How It Works
-
-```
-PDF Upload → Extract Text → Chunk Content → Store in DB
-    ↓
-User Question → Search Chunks → Get Context → Llama Response
-```
-
-See [PDF_EXTRACTION_GUIDE.md](PDF_EXTRACTION_GUIDE.md) for technical details!
 
 ## 🎉 What You Can Build
 
