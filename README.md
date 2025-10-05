@@ -2,6 +2,8 @@
 
 Create AI agents that understand your documents! Upload PDFs, ask questions, get accurate answers powered by Llama models.
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/f1f3f58f-0343-4064-b70a-c76d8e6c0c40/deploy-status)](https://app.netlify.com/projects/agentsforyou/deploys)
+
 ## 🚀 Quick Start
 
 See **[QUICK_START.md](QUICK_START.md)** - Get running in 5 minutes!
