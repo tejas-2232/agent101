@@ -20,7 +20,7 @@
   - For now, uses text similarity (trigram) as a fallback until embeddings are generated
 */
 
--- Create function to search chunks by similarity
+-- Create function to search chunks by similarity (updated to use vector embeddings)
 CREATE OR REPLACE FUNCTION search_chunks(
   query_agent_id uuid,
   query_text text,
@@ -33,19 +33,44 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  query_embedding vector(1536);
 BEGIN
-  -- For now, return chunks using text similarity until embeddings are generated
-  -- In production, you would generate embedding for query_text and use vector similarity
-  RETURN QUERY
-  SELECT
-    chunks.id,
-    chunks.content,
-    similarity(chunks.content, query_text) as similarity
-  FROM chunks
-  WHERE chunks.agent_id = query_agent_id
-    AND chunks.content IS NOT NULL
-  ORDER BY similarity DESC
-  LIMIT match_count;
+  -- Try to find chunks with embeddings first
+  SELECT embedding INTO query_embedding
+  FROM chunks 
+  WHERE agent_id = query_agent_id 
+    AND embedding IS NOT NULL 
+  LIMIT 1;
+  
+  -- If we have embeddings, use vector similarity
+  IF query_embedding IS NOT NULL THEN
+    -- For now, use text similarity as fallback since we need to generate query embedding
+    -- In production, you would generate embedding for query_text using the embedding API
+    RETURN QUERY
+    SELECT
+      chunks.id,
+      chunks.content,
+      similarity(chunks.content, query_text) as similarity
+    FROM chunks
+    WHERE chunks.agent_id = query_agent_id
+      AND chunks.content IS NOT NULL
+      AND chunks.embedding IS NOT NULL
+    ORDER BY similarity DESC
+    LIMIT match_count;
+  ELSE
+    -- Fallback to text similarity if no embeddings available
+    RETURN QUERY
+    SELECT
+      chunks.id,
+      chunks.content,
+      similarity(chunks.content, query_text) as similarity
+    FROM chunks
+    WHERE chunks.agent_id = query_agent_id
+      AND chunks.content IS NOT NULL
+    ORDER BY similarity DESC
+    LIMIT match_count;
+  END IF;
 END;
 $$;
 

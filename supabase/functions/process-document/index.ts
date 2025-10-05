@@ -1,13 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
-};
-
 const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY") || "";
+const CEREBRAS_EMBEDDINGS_URL = "https://api.cerebras.ai/v1/embeddings";
 
 interface ProcessRequest {
   document_id: string;
@@ -62,6 +57,33 @@ async function extractTextFromFile(fileContent: Uint8Array, fileType: string): P
   }
   
   return "Unsupported file type";
+}
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  try {
+    const response = await fetch(CEREBRAS_EMBEDDINGS_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${CEREBRAS_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b",
+        input: text,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to generate embedding:", await response.text());
+      return [];
+    }
+
+    const data = await response.json();
+    return data.data[0]?.embedding || [];
+  } catch (error) {
+    console.error("Error generating embedding:", error);
+    return [];
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -138,16 +160,21 @@ Deno.serve(async (req: Request) => {
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       
+      // Generate embedding for the chunk
+      const embedding = await generateEmbedding(chunk);
+      
       await supabase
         .from("chunks")
         .insert({
           document_id: document_id,
           agent_id: document.agent_id,
           content: chunk,
+          embedding: embedding.length > 0 ? embedding : null,
           chunk_index: i,
           token_count: Math.ceil(chunk.length / 4),
           metadata: {
             source: document.source_type === "url" ? document.source_url : document.file_name,
+            has_embedding: embedding.length > 0,
           },
         });
     }

@@ -15,6 +15,9 @@ interface Agent {
   id: string;
   name: string;
   status: string;
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
 }
 
 interface Conversation {
@@ -48,7 +51,7 @@ export function Chat() {
 
     const { data, error } = await supabase
       .from('agents')
-      .select('id, name, status')
+      .select('id, name, status, model, temperature, max_tokens')
       .eq('id', agentId)
       .single();
 
@@ -220,7 +223,9 @@ export function Chat() {
                 </div>
                 <div>
                   <h1 className="font-semibold text-gray-900">{agent?.name || 'Agent'}</h1>
-                  <p className="text-xs text-gray-500">AI Assistant</p>
+                  <p className="text-xs text-gray-500">
+                    AI Assistant • {agent?.model || 'llama-3.3-70b'}
+                  </p>
                 </div>
               </div>
             </div>

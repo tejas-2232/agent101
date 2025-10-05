@@ -7,6 +7,28 @@ import { ArrowLeft, Bot, FileText, Link as LinkIcon, Upload, Loader2 } from 'luc
 type Step = 'info' | 'source' | 'processing';
 type SourceType = 'url' | 'file';
 
+// Llama model configurations
+const LLAMA_MODELS = {
+  "llama-3.3-70b": {
+    name: "Llama 3.3 70B",
+    description: "Most capable model for complex reasoning",
+    maxTokens: 2000,
+    temperature: 0.7
+  },
+  "llama-3.1-70b": {
+    name: "Llama 3.1 70B", 
+    description: "Balanced performance and speed",
+    maxTokens: 1500,
+    temperature: 0.7
+  },
+  "llama-3.1-8b": {
+    name: "Llama 3.1 8B",
+    description: "Fast responses for simple queries",
+    maxTokens: 1000,
+    temperature: 0.8
+  }
+};
+
 export function CreateAgent() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -15,6 +37,7 @@ export function CreateAgent() {
 
   const [agentName, setAgentName] = useState('');
   const [agentDescription, setAgentDescription] = useState('');
+  const [selectedModel, setSelectedModel] = useState('llama-3.3-70b');
   const [sourceType, setSourceType] = useState<SourceType>('file');
   const [url, setUrl] = useState('');
   const [files, setFiles] = useState<FileList | null>(null);
@@ -54,6 +77,9 @@ export function CreateAgent() {
           user_id: user.id,
           name: agentName,
           description: agentDescription || null,
+          model: selectedModel,
+          temperature: LLAMA_MODELS[selectedModel].temperature,
+          max_tokens: LLAMA_MODELS[selectedModel].maxTokens,
           status: 'training',
         })
         .select()
@@ -224,6 +250,27 @@ export function CreateAgent() {
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-2">
+                  Llama Model
+                </label>
+                <select
+                  id="model"
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {Object.entries(LLAMA_MODELS).map(([key, model]) => (
+                    <option key={key} value={key}>
+                      {model.name} - {model.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-sm text-gray-500">
+                  Choose the Llama model that best fits your needs. Larger models provide better reasoning but are slower.
+                </p>
               </div>
             </div>
           )}

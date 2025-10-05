@@ -10,10 +10,34 @@ const corsHeaders = {
 const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY") || "";
 const CEREBRAS_API_URL = "https://api.cerebras.ai/v1/chat/completions";
 
+// Llama model configurations
+const LLAMA_MODELS = {
+  "llama-3.3-70b": {
+    name: "Llama 3.3 70B",
+    description: "Most capable model for complex reasoning",
+    maxTokens: 2000,
+    temperature: 0.7
+  },
+  "llama-3.1-70b": {
+    name: "Llama 3.1 70B", 
+    description: "Balanced performance and speed",
+    maxTokens: 1500,
+    temperature: 0.7
+  },
+  "llama-3.1-8b": {
+    name: "Llama 3.1 8B",
+    description: "Fast responses for simple queries",
+    maxTokens: 1000,
+    temperature: 0.8
+  }
+};
+
 interface ChatRequest {
   agent_id: string;
   message: string;
   conversation_id: string;
+  model?: string; // Optional model selection
+  temperature?: number; // Optional temperature override
 }
 
 Deno.serve(async (req: Request) => {
@@ -30,7 +54,7 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { agent_id, message, conversation_id }: ChatRequest = await req.json();
+    const { agent_id, message, conversation_id, model, temperature }: ChatRequest = await req.json();
 
     if (!agent_id || !message) {
       return new Response(
@@ -44,7 +68,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: agent, error: agentError } = await supabase
       .from("agents")
-      .select("system_prompt")
+      .select("system_prompt, model, temperature, max_tokens")
       .eq("id", agent_id)
       .single();
 
@@ -58,14 +82,54 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { data: chunks, error: chunksError } = await supabase.rpc(
-      "search_chunks",
-      {
-        query_agent_id: agent_id,
-        query_text: message,
-        match_count: 5,
+    // Generate embedding for the query to improve RAG performance
+    let queryEmbedding: number[] = [];
+    try {
+      const embeddingResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-embeddings`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: message,
+          model: selectedModel,
+        }),
+      });
+
+      if (embeddingResponse.ok) {
+        const embeddingData = await embeddingResponse.json();
+        queryEmbedding = embeddingData.embedding || [];
       }
-    );
+    } catch (error) {
+      console.log("Failed to generate query embedding, using text similarity:", error);
+    }
+
+    // Search for relevant chunks using enhanced search
+    let chunks;
+    if (queryEmbedding.length > 0) {
+      // Use vector similarity search
+      const { data: vectorChunks, error: vectorError } = await supabase.rpc(
+        "search_chunks_by_vector",
+        {
+          query_agent_id: agent_id,
+          query_embedding: queryEmbedding,
+          match_count: 5,
+        }
+      );
+      chunks = vectorChunks;
+    } else {
+      // Fallback to text similarity
+      const { data: textChunks, error: chunksError } = await supabase.rpc(
+        "search_chunks",
+        {
+          query_agent_id: agent_id,
+          query_text: message,
+          match_count: 5,
+        }
+      );
+      chunks = textChunks;
+    }
 
     let context = "";
     if (chunks && chunks.length > 0) {
@@ -73,6 +137,12 @@ Deno.serve(async (req: Request) => {
         .map((chunk: any) => chunk.content)
         .join("\n\n");
     }
+
+    // Determine model and parameters from agent settings or request
+    const selectedModel = model || agent.model || "llama-3.3-70b";
+    const modelConfig = LLAMA_MODELS[selectedModel] || LLAMA_MODELS["llama-3.3-70b"];
+    const selectedTemperature = temperature !== undefined ? temperature : (agent.temperature || modelConfig.temperature);
+    const selectedMaxTokens = agent.max_tokens || modelConfig.maxTokens;
 
     const systemPrompt = agent.system_prompt || "You are a helpful AI assistant.";
     const contextPrompt = context
@@ -86,7 +156,7 @@ Deno.serve(async (req: Request) => {
         "Authorization": `Bearer ${CEREBRAS_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b",
+        model: selectedModel,
         messages: [
           {
             role: "system",
@@ -97,8 +167,8 @@ Deno.serve(async (req: Request) => {
             content: message,
           },
         ],
-        temperature: 0.7,
-        max_tokens: 1000,
+        temperature: selectedTemperature,
+        max_tokens: selectedMaxTokens,
       }),
     });
 
@@ -140,6 +210,8 @@ Deno.serve(async (req: Request) => {
         response: assistantMessage,
         message_id: savedMessage?.id,
         chunks_used: chunks?.length || 0,
+        model_used: selectedModel,
+        temperature_used: selectedTemperature,
       }),
       {
         status: 200,
