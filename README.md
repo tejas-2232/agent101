@@ -84,6 +84,8 @@ PDF Upload → Extract Text → Chunk Content → Store in DB
 User Question → Search Chunks → Get Context → Llama Response
 ```
 
+![AgentsForYou Architecture Flowchart](assets/flowchart.png)
+
 See [PDF_EXTRACTION_GUIDE.md](PDF_EXTRACTION_GUIDE.md) for technical details!
 
 ## 🎉 What You Can Build
