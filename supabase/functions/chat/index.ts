@@ -67,17 +67,25 @@ Deno.serve(async (req: Request) => {
       }
     );
 
+    // Debug logging
+    console.log("Search results:", {
+      chunks_found: chunks?.length || 0,
+      search_error: chunksError,
+      agent_id,
+    });
+
     let context = "";
     if (chunks && chunks.length > 0) {
       context = chunks
         .map((chunk: any) => chunk.content)
         .join("\n\n");
+      console.log("Context extracted, length:", context.length);
     }
 
-    const systemPrompt = agent.system_prompt || "You are a helpful AI assistant.";
+    const systemPrompt = agent.system_prompt || "You are a helpful AI assistant that answers questions based on provided documents.";
     const contextPrompt = context
-      ? `\n\nContext from knowledge base:\n${context}\n\nUse this context to answer the user's question accurately. If the context doesn't contain relevant information, say so.`
-      : "\n\nNo relevant context found in the knowledge base. Answer based on general knowledge.";
+      ? `\n\nContext from knowledge base:\n${context}\n\nIMPORTANT: Answer based ONLY on the context above. If the information isn't in the context, say you don't have that information in the uploaded documents.`
+      : "\n\nNo documents uploaded yet. Tell the user: 'I don't have any documents uploaded yet. Please upload a PDF or document first so I can answer questions about it.'";
 
     const cerebrasResponse = await fetch(CEREBRAS_API_URL, {
       method: "POST",

@@ -6,6 +6,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+deploy-pdf-extraction.sh
+deploy-pdf-extraction.ps1
+
 node_modules
 dist
 dist-ssr
