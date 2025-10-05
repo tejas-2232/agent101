@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { ArrowLeft, Send, Bot, User, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Bot, User, Loader2, Settings } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -197,51 +197,71 @@ export function Chat() {
     }
   };
 
+  const getModelDisplay = (model: string) => {
+    const modelMap: { [key: string]: string } = {
+      'llama-3.3-70b': 'Llama 3.3 70B',
+      'llama-3.1-70b': 'Llama 3.1 70B',
+      'llama-3.1-8b': 'Llama 3.1 8B',
+    };
+    return modelMap[model] || model;
+  };
+
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-rh-dark-900 flex items-center justify-center">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 border-2 border-rh-green-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-rh-gray-400">Loading conversation...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <nav className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-rh-dark-900 flex flex-col">
+      {/* Navigation */}
+      <nav className="nav-rh">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+                className="btn-rh-ghost flex items-center space-x-2"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="flex items-center space-x-3">
-                <div className="bg-blue-600 p-2 rounded-lg">
+                <div className="w-10 h-10 bg-rh-green-500 rounded-rh flex items-center justify-center">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="font-semibold text-gray-900">{agent?.name || 'Agent'}</h1>
-                  <p className="text-xs text-gray-500">
-                    AI Assistant • {agent?.model || 'llama-3.3-70b'}
+                  <h1 className="font-semibold text-white">{agent?.name || 'Agent'}</h1>
+                  <p className="text-xs text-rh-gray-400">
+                    {getModelDisplay(agent?.model || 'llama-3.3-70b')}
                   </p>
                 </div>
               </div>
             </div>
+            <button
+              onClick={() => navigate(`/agent/${agentId}`)}
+              className="btn-rh-ghost"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </nav>
 
+      {/* Messages */}
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 py-8">
           {messages.length === 0 ? (
             <div className="text-center py-16">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Bot className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-rh-green-500/10 rounded-rh-lg flex items-center justify-center mx-auto mb-4">
+                <Bot className="w-8 h-8 text-rh-green-400" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Start a conversation</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-white mb-2">Start a conversation</h3>
+              <p className="text-rh-gray-400">
                 Ask me anything about the content I've been trained on
               </p>
             </div>
@@ -253,14 +273,14 @@ export function Chat() {
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`flex items-start space-x-3 max-w-3xl ${message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${message.role === 'user' ? 'bg-blue-600' : 'bg-gray-200'}`}>
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${message.role === 'user' ? 'bg-rh-green-500' : 'bg-rh-dark-800 border border-rh-dark-600'}`}>
                       {message.role === 'user' ? (
                         <User className="w-5 h-5 text-white" />
                       ) : (
-                        <Bot className="w-5 h-5 text-gray-600" />
+                        <Bot className="w-5 h-5 text-rh-green-400" />
                       )}
                     </div>
-                    <div className={`px-4 py-3 rounded-2xl ${message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
+                    <div className={`px-4 py-3 rounded-rh-lg ${message.role === 'user' ? 'bg-rh-green-500 text-white' : 'card-rh text-white'}`}>
                       <p className="whitespace-pre-wrap">{message.content}</p>
                     </div>
                   </div>
@@ -269,11 +289,14 @@ export function Chat() {
               {loading && (
                 <div className="flex justify-start">
                   <div className="flex items-start space-x-3 max-w-3xl">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gray-200">
-                      <Bot className="w-5 h-5 text-gray-600" />
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-rh-dark-800 border border-rh-dark-600">
+                      <Bot className="w-5 h-5 text-rh-green-400" />
                     </div>
-                    <div className="px-4 py-3 rounded-2xl bg-white border border-gray-200">
-                      <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                    <div className="card-rh px-4 py-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-rh-green-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-rh-gray-400">Thinking...</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -284,7 +307,8 @@ export function Chat() {
         </div>
       </main>
 
-      <div className="border-t border-gray-200 bg-white">
+      {/* Input */}
+      <div className="border-t border-rh-dark-700 bg-rh-dark-800">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-end space-x-4">
             <textarea
@@ -293,13 +317,13 @@ export function Chat() {
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
               rows={1}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="input-rh resize-none"
               style={{ minHeight: '52px', maxHeight: '200px' }}
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || loading}
-              className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-rh-primary p-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-5 h-5" />
             </button>

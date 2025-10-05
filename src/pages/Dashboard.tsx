@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Bot, Plus, LogOut, MessageSquare, FileText, Loader2, Trash2 } from 'lucide-react';
+import { Plus, Bot, MessageCircle, Settings, TrendingUp, Users, Zap } from 'lucide-react';
 
 interface Agent {
   id: string;
   name: string;
   description: string | null;
-  status: 'training' | 'active' | 'error' | 'inactive';
+  status: string;
   total_documents: number;
   total_chunks: number;
+  model: string;
   created_at: string;
 }
 
@@ -41,165 +42,209 @@ export function Dashboard() {
     setLoading(false);
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
-  };
-
-  const handleDeleteAgent = async (agentId: string) => {
-    if (!confirm('Are you sure you want to delete this agent? This action cannot be undone.')) {
-      return;
-    }
-
-    const { error } = await supabase
-      .from('agents')
-      .delete()
-      .eq('id', agentId);
-
-    if (error) {
-      console.error('Error deleting agent:', error);
-      alert('Failed to delete agent');
-    } else {
-      setAgents(agents.filter(a => a.id !== agentId));
-    }
-  };
-
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return <span className="badge-rh-success">Active</span>;
       case 'training':
-        return 'bg-yellow-100 text-yellow-800';
+        return <span className="badge-rh-warning">Training</span>;
       case 'error':
-        return 'bg-red-100 text-red-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
+        return <span className="badge-rh-error">Error</span>;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <span className="badge-rh bg-rh-gray-500/10 text-rh-gray-400 border border-rh-gray-500/20">Inactive</span>;
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-2 rounded-lg">
-                <Bot className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">Agent Platform</span>
-            </div>
+  const getModelDisplay = (model: string) => {
+    const modelMap: { [key: string]: string } = {
+      'llama-3.3-70b': 'Llama 3.3 70B',
+      'llama-3.1-70b': 'Llama 3.1 70B',
+      'llama-3.1-8b': 'Llama 3.1 8B',
+    };
+    return modelMap[model] || model;
+  };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-rh-dark-900 flex items-center justify-center">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 border-2 border-rh-green-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-rh-gray-400">Loading your agents...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-rh-dark-900">
+      {/* Navigation */}
+      <nav className="nav-rh">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{user?.email}</span>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-rh-green-500 rounded-lg flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="text-xl font-bold text-white">AgenticAI</h1>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
               <button
-                onClick={handleSignOut}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                onClick={() => navigate('/create-agent')}
+                className="btn-rh-primary flex items-center space-x-2"
               >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
+                <Plus className="w-4 h-4" />
+                <span>Create Agent</span>
               </button>
+              
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-rh-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-white">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="text-rh-gray-400 hover:text-white transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </nav>
 
+      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Your AI Agents</h1>
-            <p className="mt-2 text-gray-600">
-              Create and manage agents that understand your content
-            </p>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="card-rh p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-rh-gray-400 text-sm font-medium">Total Agents</p>
+                <p className="text-2xl font-bold text-white">{agents.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-rh-green-500/10 rounded-rh flex items-center justify-center">
+                <Bot className="w-6 h-6 text-rh-green-400" />
+              </div>
+            </div>
           </div>
-
-          <button
-            onClick={() => navigate('/create-agent')}
-            className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Create Agent</span>
-          </button>
+          
+          <div className="card-rh p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-rh-gray-400 text-sm font-medium">Active Agents</p>
+                <p className="text-2xl font-bold text-white">
+                  {agents.filter(a => a.status === 'active').length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-rh-green-500/10 rounded-rh flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-rh-green-400" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="card-rh p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-rh-gray-400 text-sm font-medium">Total Documents</p>
+                <p className="text-2xl font-bold text-white">
+                  {agents.reduce((sum, agent) => sum + agent.total_documents, 0)}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-rh-green-500/10 rounded-rh flex items-center justify-center">
+                <Users className="w-6 h-6 text-rh-green-400" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="card-rh p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-rh-gray-400 text-sm font-medium">Total Chunks</p>
+                <p className="text-2xl font-bold text-white">
+                  {agents.reduce((sum, agent) => sum + agent.total_chunks, 0)}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-rh-green-500/10 rounded-rh flex items-center justify-center">
+                <Zap className="w-6 h-6 text-rh-green-400" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
-        ) : agents.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Bot className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No agents yet</h3>
-            <p className="text-gray-600 mb-6">
-              Create your first AI agent to get started
-            </p>
-            <button
-              onClick={() => navigate('/create-agent')}
-              className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Create Your First Agent</span>
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {agents.map((agent) => (
-              <div
-                key={agent.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
+        {/* Agents Grid */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-white mb-4">Your Agents</h2>
+          
+          {agents.length === 0 ? (
+            <div className="card-rh p-12 text-center">
+              <div className="w-16 h-16 bg-rh-green-500/10 rounded-rh-lg flex items-center justify-center mx-auto mb-4">
+                <Bot className="w-8 h-8 text-rh-green-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">No agents yet</h3>
+              <p className="text-rh-gray-400 mb-6">
+                Create your first AI agent to get started with intelligent conversations
+              </p>
+              <button
+                onClick={() => navigate('/create-agent')}
+                className="btn-rh-primary"
               >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <Bot className="w-6 h-6 text-blue-600" />
+                Create Your First Agent
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {agents.map((agent) => (
+                <div key={agent.id} className="card-rh p-6 hover:shadow-rh-xl transition-all duration-200">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-rh-green-500/10 rounded-rh flex items-center justify-center">
+                        <Bot className="w-5 h-5 text-rh-green-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-white">{agent.name}</h3>
+                        <p className="text-sm text-rh-gray-400">{getModelDisplay(agent.model)}</p>
+                      </div>
+                    </div>
+                    {getStatusBadge(agent.status)}
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(agent.status)}`}>
-                    {agent.status}
-                  </span>
-                </div>
-
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{agent.name}</h3>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {agent.description || 'No description provided'}
-                </p>
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <div className="flex items-center space-x-1">
-                    <FileText className="w-4 h-4" />
-                    <span>{agent.total_documents} docs</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <MessageSquare className="w-4 h-4" />
+                  
+                  {agent.description && (
+                    <p className="text-rh-gray-400 text-sm mb-4 line-clamp-2">
+                      {agent.description}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-sm text-rh-gray-400 mb-4">
+                    <span>{agent.total_documents} documents</span>
                     <span>{agent.total_chunks} chunks</span>
                   </div>
+                  
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => navigate(`/chat/${agent.id}`)}
+                      disabled={agent.status !== 'active'}
+                      className="flex-1 btn-rh-primary flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Chat</span>
+                    </button>
+                    <button
+                      onClick={() => navigate(`/agent/${agent.id}`)}
+                      className="btn-rh-secondary flex items-center justify-center"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => navigate(`/chat/${agent.id}`)}
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-                  >
-                    Chat
-                  </button>
-                  <button
-                    onClick={() => navigate(`/agent/${agent.id}`)}
-                    className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
-                  >
-                    Manage
-                  </button>
-                  <button
-                    onClick={() => handleDeleteAgent(agent.id)}
-                    className="bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 transition"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

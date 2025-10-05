@@ -1,3 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-rh-dark-900 text-white font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Robinhood-style button */
+  .btn-rh {
+    @apply inline-flex items-center justify-center rounded-rh px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-rh-dark-900;
+  }
+  
+  .btn-rh-primary {
+    @apply btn-rh bg-rh-green-500 text-white hover:bg-rh-green-600 focus:ring-rh-green-500 shadow-rh;
+  }
+  
+  .btn-rh-secondary {
+    @apply btn-rh bg-rh-dark-800 text-white hover:bg-rh-dark-700 focus:ring-rh-dark-500 border border-rh-dark-600;
+  }
+  
+  .btn-rh-ghost {
+    @apply btn-rh text-rh-gray-400 hover:text-white hover:bg-rh-dark-800 focus:ring-rh-dark-500;
+  }
+  
+  /* Robinhood-style card */
+  .card-rh {
+    @apply bg-rh-dark-800 border border-rh-dark-700 rounded-rh-lg shadow-rh-lg;
+  }
+  
+  /* Robinhood-style input */
+  .input-rh {
+    @apply w-full px-4 py-3 bg-rh-dark-800 border border-rh-dark-600 rounded-rh text-white placeholder-rh-gray-400 focus:outline-none focus:ring-2 focus:ring-rh-green-500 focus:border-transparent transition-all duration-200;
+  }
+  
+  /* Robinhood-style navigation */
+  .nav-rh {
+    @apply bg-rh-dark-800 border-b border-rh-dark-700;
+  }
+  
+  /* Robinhood-style badge */
+  .badge-rh {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .badge-rh-success {
+    @apply badge-rh bg-rh-green-500/10 text-rh-green-400 border border-rh-green-500/20;
+  }
+  
+  .badge-rh-warning {
+    @apply badge-rh bg-yellow-500/10 text-yellow-400 border border-yellow-500/20;
+  }
+  
+  .badge-rh-error {
+    @apply badge-rh bg-red-500/10 text-red-400 border border-red-500/20;
+  }
+}
